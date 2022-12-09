@@ -1,39 +1,114 @@
-# History files
-.Rhistory
-.Rapp.history
+#Work For Final Project
 
-# Session Data files
-.RData
+install.packages("lubridate")
 
-# User-specific files
-.Ruserdata
+library(sf)
+library(tidyverse)
+library(tmap)
+library(lwgeom)
+library(raster)
+library(sp)
+library(tigris)
+library(FedData)
+library(tidyr)
+library(lubridate)
 
-# Example code in package build process
-*-Ex.R
+setwd("C:/Users/Admin/OneDrive/Documents/ENVS117/FinalProject")
 
-# Output files from R CMD build
-/*.tar.gz
+"Layer that shows the river basins for the greater chesapeake"
+SegmentedChesapeake <- st_read("P6Beta_v3_LRSegs_081516.shp")
+crs(SegmentedChesapeake)
+SegmentedChesapeake <- dplyr::filter(SegmentedChesapeake, Region == "Chesapeake Bay Watershed")
 
-# Output files from R CMD check
-/*.Rcheck/
+tmap_mode("view")
+tmap_options(check.and.fix = TRUE)
+BayMap <- qtm(SegmentedChesapeake, fill = "MajBas")
 
-# RStudio files
-.Rproj.user/
+BayMap
 
-# produced vignettes
-vignettes/*.html
-vignettes/*.pdf
+"As Far as I got in CLass for BasinBap"
+tm_shape(SegmentedChesapeake)+tm_polygons(col = "MajBas", lwd=0)
 
-# OAuth2 token, see https://github.com/hadley/httr/releases/tag/v0.3
-.httr-oauth
+tm_shape(SegmentedChesapeake)+tm_polygons()
 
-# knitr and R markdown default cache directories
-*_cache/
-/cache/
 
-# Temporary files created by R markdown
-*.utf8.md
-*.knit.md
+"Trying to get pollution point source"
+PollutionPointSource <- read_csv("PointSourceFacilityInformationState (1).csv")
+PollutionPointSource <- PollutionPointSource %>% 
+  drop_na(Latitude, Longitude, CBPBasin)
 
-# R Environment Variables
-.Renviron
+PollutionPointSource <- dplyr::filter(PollutionPointSource, Status=="ACTIVE")
+
+PollutionPoint.sf <- st_as_sf(PollutionPointSource, coords = c("Longitude", "Latitude"), 
+                             crs = 4326, agr = "constant")
+
+PollutionPoint.sfclean <- dplyr::select(PollutionPoint.sf,2,4,8,22,23,24,29)
+
+"AS Far as I got today in Class "
+tm_shape(PollutionPoint.sfclean)+tm_dots()
+
+
+"ALMOST DONE WITH MAP#1"
+
+tm_shape(SegmentedChesapeake)+tm_polygons(col = "MajBas", lwd=0)+
+  tm_shape(PollutionPoint.sfclean)+tm_dots()
+
+
+
+
+"PROJECT"
+plot(PollutionPoint.sf["CBPBasin"])
+
+"PROJECT BOTH LAYERS ON CRS FOR MARYLAND AND LOOK UP DISSOLVE SYNTAX"
+
+read_csv("Chesapeake_Bay_Watershed_Model_Phase_6_Land_River_Segments")
+
+library(tmap)
+data("World")
+
+tm_shape(SegmentedChesapeake) +
+  tm_polygons(c("DischargeType", "CBPBasin"))
+
+"This Shows Everything!"
+tm_shape(SegmentedChesapeake) +
+  tm_polygons()+
+  tm_shape(PollutionPoint.sf)+tm_dots()
+
+
+
+DissolvedO2<-read_csv("WaterQualityWaterQualityFIPS.csv")
+Dissolvedo2sf <- st_as_sf(DissolvedO2, coords = c("Longitude", "Latitude"),  crs = 4326)
+
+
+Dissolved02Graph <- dplyr::filter(DissolvedO2, Station == "PXT0455",TotalDepth == "2.5")
+Dissolved02Graph <- dplyr::select(Dissolved02Graph,8,9,11,20,21,28,29)
+
+No2DatesGraph  <- Dissolved02Graph[!duplicated(Dissolved02Graph$SampleDate), ]
+sap
+
+No2DatesGraph$SampleDate <- mdy(No2DatesGraph$SampleDate)
+
+
+ggplot(No2DatesGraph, aes(x=SampleDate, y=MeasureValue, group=1)) +
+  geom_line(color="#0099f9", size = 1.5)+
+  geom_point(color = "#0099f9", size = 3)+ 
+  labs(  
+    title = "Mg/L of Dissolved oxygen at station PXT0455 at depth 2.5",
+          subtitle = "Data from 2018 to 2021",
+          caption = "Source: Chesapeake Bay Program")
+
+"THIS IS AS FAR AS I GOT WITH MY SECOND MAP"
+
+tm_shape(Dissolvedo2sf)+tm_dots(col = "MeasureValue",palette="YlGnBu")
+
+
+
+Vegetation <- st_read("mu_UVVR_CB.shp")
+NewVeg <- Vegetation[c(TRUE,rep(FALSE,10)), ]
+tm_shape(NewVeg)+tm_polygons(col = "UVVR")
+
+DeadZones<-read_csv("Maryland_Chesapeake_Bay_Dead_Zones_-_Chesapeake_Bay_Dead_Zones.csv")
+
+rm(list=ls())
+
+
